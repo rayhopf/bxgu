@@ -1,5 +1,8 @@
 # Stanford CS224W: ML with Graphs | 2021
 
+- 主页的 slide 是老的: https://web.stanford.edu/class/cs224w/
+- 快照的 slide 反而新: https://snap.stanford.edu/class/cs224w-2023/
+
 ### Lecture 2.1 - Traditional Feature-based Methods: Node
 - 传统图机器学习就是基于特征的方法，提取特征，然后用经典机器学习的方法训练和推理
 
@@ -296,8 +299,240 @@ collective classification:
   - only label, not use node feature
 - iterative
   - both of label and feature
+  - example: web page classify
 
 
+**Summary**
+
+- We talked about 2 approaches to collective classification
+
+- Relational classification
+  - Iteratively update probabilities of node belonging to a label class based on its neighbors
+
+- Iterative classification
+  - Improve over collective classification to handle attribute/feature information
+  - Classify node \(i\) based on its features as well as labels of neighbors
+
+### Lecture 5.3 - Collective Classification: Belief Propagation
+- loopy belief propagation
+- message passing
+
+
+
+$$
+m_{i \to j}(Y_j) = \sum_{Y_i \in \mathcal{L}} \psi(Y_i, Y_j) \phi_i(Y_i) \prod_{k \in N_i \setminus \{j\}} m_{k \to i}(Y_i) \quad \forall Y_j \in \mathcal{L}
+$$
+
+- **Sum over all states**: $\sum_{Y_i \in \mathcal{L}}$
+- **Label-label potential**: $\psi(Y_i, Y_j)$
+- **Prior**: $\phi_i(Y_i)$
+- **All messages sent by neighbors from previous round**: $\prod_{k \in N_i \setminus \{j\}} m_{k \to i}(Y_i)$
+
+
+loop -> not converge -> but good for heuristic
+
+**Advantages of Belief Propagation**
+
+**Advantages:**
+- Easy to program & parallelize
+- General: can apply to any graph model with any form of potentials
+  - Potential can be higher order: e.g. $$\psi(Y_i, Y_j, Y_k, Y_v \ldots)$$
+
+**Challenges:**
+- Convergence is not guaranteed (when to stop), especially if many closed loops
+
+**Potential functions (parameters):**
+- Require training to estimate
+
+
+**Summary**
+
+- We learned how to leverage correlation in graphs to make prediction on nodes
+- Key techniques:
+  - Relational classification
+  - Iterative classification
+  - Loopy belief propagation
+
+
+### Lecture 6.1 - Introduction to Graph Neural Networks
+recap
+- limitations of shallow embedding
+
+Tasks we will be able to solve:
+- Node classification: Predict the type of a given node
+- Link prediction: Predict whether two nodes are linked
+- Community detection: Identify densely linked clusters of nodes
+- Network similarity: How similar are two (sub)networks
+
+### Lecture 6.2 - Basics of Deep Learning
+https://snap.stanford.edu/class/cs224w-2023/slides/04-GNN1.pdf
+
+**Summary**
+
+- **Objective function:** 
+  $$\min_\Theta \mathcal{L}(y, f(x))$$
+
+- \( f \) can be a simple linear layer, an MLP, or other neural networks (e.g., a GNN later)
+- Sample a minibatch of input \( x \)
+- **Forward propagation:** compute \( \mathcal{L} \) given \( x \)
+- **Back-propagation:** obtain gradient \( \nabla_\Theta \mathcal{L} \) using a chain rule
+- Use **stochastic gradient descent (SGD)** to optimize for \( \Theta \) over many iterations
+
+### Lecture 6.3 - Deep Learning for Graphs
+https://snap.stanford.edu/class/cs224w-2023/slides/04-GNN1.pdf
+
+- Permutation-invariant
+- Permutation-equivariant
+
+neighborhood aggregation
+- sum or avg -> deep encoder
+
+deepwalk/node2vec: shallow encoder
+
+GCN: deep encoder
+
+equation in matrix form
+- neighbor agg
+- self trans
+- sparse matrix multiplication
+
+here agg is sum/avg,
+when aggregation function is complex, GNNs can not be expressed in matrix form
+
+https://tkipf.github.io/graph-convolutional-networks/
+
+
+inductive capability, generalize to unseen nodes. 
+**That's it, now I can see the GCN example in PyG**
+
+new nodes is not unseen nodes, need new embedding on the fly.
+
+
+**Summary**
+- **Recap:** Generate node embeddings by aggregating neighborhood information
+  - We saw a basic variant of this idea
+  - Key distinctions are in how different approaches aggregate information across the layers
+- **Next:** Describe GraphSAGE graph neural network architecture
+
+
+### Lecture 7.1 - A general Perspective on GNNs
+
+GNN framework and how to design a GNN:
+
+GCN, GraphSAGE, GAT difference is just on how to:
+- Message
+- Aggregation
+AND
+- Layer connectivity: simple stack or add skip
+- Graph manipulation (feature augmentation, structure manipulation)
+- objective function
+
+### Lecture 7.2 - A Single Layer of a GNN
+> @haongngoc1215
+> This lecture is the best one in the whole series.
+
+#### A Single GNN Layer
+
+- **Idea of a GNN Layer:**
+  - Compress a set of vectors into a single vector
+  - **Two step process:**
+    - (1) Message
+    - (2) Aggregation
+
+#### Message Computation
+https://youtu.be/247Mkqj_wRM?list=PLoROMvodv4rPLKxIpqhjhPgdQy7imNkDn&t=164
+- **(1) Message computation**
+  
+  - **Message function:** $$\mathbf{m}_u^{(l)} = \text{MSG}^{(l)} \left( \mathbf{h}_u^{(l-1)} \right)$$
+    
+    - *Intuition:* Each node will create a message, which will be sent to other nodes later
+    
+    - *Example:* A Linear layer $$\mathbf{m}_u^{(l)} = \mathbf{W}^{(l)} \mathbf{h}_u^{(l-1)}$$
+      
+      - Multiply node features with weight matrix $$\mathbf{W}^{(l)}$$
+
+
+#### Message Aggregation
+
+- **(2) Aggregation**
+  - **Intuition:** Each node will aggregate the messages from node \( v \)'s neighbors
+  - $$
+    \mathbf{h}_v^{(l)} = \text{AGG}^{(l)} \left( \left\{ \mathbf{m}_u^{(l)}, u \in N(v) \right\} \right)
+    $$
+  - **Example:** Sum($\cdot$), Mean($\cdot$) or Max($\cdot$) aggregator
+  - $$
+    \mathbf{h}_v^{(l)} = \text{Sum}(\{\mathbf{m}_u^{(l)}, u \in N(v)\})
+    $$
+
+#### Message Aggregation: Issue
+
+- **Issue**: Information from node $v$ itself **could get lost**
+  - Computation of $h_v^{(l)}$ does not directly depend on $h_v^{(l-1)}$
+  
+- **Solution**: Include $h_v^{(l-1)}$ when computing $h_v^{(l)}$
+  - **(1) Message**: compute message from node $v$ itself
+    - Usually, a *different message computation* will be performed
+    
+    $$
+    \mathbf{m}_u^{(l)} = \mathbf{W}^{(l)} \mathbf{h}_u^{(l-1)}
+    $$
+
+    $$
+    \mathbf{m}_v^{(l)} = \mathbf{B}^{(l)} \mathbf{h}_v^{(l-1)}
+    $$
+
+  - **(2) Aggregation**: After aggregating from neighbors, we can **aggregate the message from node** $v$ **itself**
+    - Via *concatenation* or *summation*
+
+$$
+h_v^{(l)} = \text{CONCAT}\left(\text{AGG}\left(\left\{\mathbf{m}_u^{(l)}, u \in N(v)\right\}\right), \mathbf{m}_v^{(l)}\right)
+$$
+
+#### A Single GNN Layer
+
+- **Putting things together:**
+
+  - **(1) Message:** each node computes a message
+  
+    $$ \mathbf{m}_u^{(l)} = \text{MSG}^{(l)} \left( \mathbf{h}_u^{(l-1)} \right), u \in \{N(v) \cup v\} $$
+    
+  - **(2) Aggregation:** aggregate messages from neighbors
+  
+    $$ \mathbf{h}_v^{(l)} = \text{AGG}^{(l)} \left( \{ \mathbf{m}_u^{(l)}, u \in N(v) \}, \mathbf{m}_v^{(l)} \right) $$
+    
+  - **Nonlinearity (activation):** Adds expressiveness
+    - Often written as $\sigma(\cdot)$: ReLU($\cdot$), Sigmoid($\cdot$), ...
+    - Can be added to **message** or **aggregation**
+
+#### Classical GNN Layers: GCN (1)
+
+- **(1) Graph Convolutional Networks (GCN)**
+
+  $$
+  \mathbf{h}_v^{(l)} = \sigma \left( \mathbf{W}^{(l)} \sum_{u \in N(v)} \frac{\mathbf{h}_u^{(l-1)}}{|N(v)|} \right)
+  $$
+
+- **How to write this as Message + Aggregation?**
+
+  $$
+  \mathbf{h}_v^{(l)} = \sigma \left( \sum_{u \in N(v)} \mathbf{W}^{(l)} \frac{\mathbf{h}_u^{(l-1)}}{|N(v)|} \right)
+  $$
+  
+  Aggregation <- Message
+
+
+#### Classical GNN Layers: GCN (2)
+
+- **(1) Graph Convolutional Networks (GCN)**
+
+  $$ \mathbf{h}_v^{(l)} = \sigma \left( \sum_{u \in N(v)} \mathbf{W}^{(l)} \frac{\mathbf{h}_u^{(l-1)}}{|N(v)|} \right) $$
+
+- **Message:**
+  - Each Neighbor: $$ \mathbf{m}_u^{(l)} = \frac{1}{|N(v)|} \mathbf{W}^{(l)} \mathbf{h}_u^{(l-1)} $$  _Normalized by node degree_ (In the GCN paper they use a slightly different normalization)
+
+- **Aggregation:**
+  - **Sum** over messages from neighbors, then apply activation
+    $$ \mathbf{h}_v^{(l)} = \sigma \left( \textbf{Sum} \left( \{ \mathbf{m}_u^{(l)} , u \in N(v) \} \right) \right) $$ 
 
 
 
