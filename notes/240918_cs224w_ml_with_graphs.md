@@ -403,7 +403,8 @@ https://tkipf.github.io/graph-convolutional-networks/
 
 
 inductive capability, generalize to unseen nodes. 
-**That's it, now I can see the GCN example in PyG**
+> NOTE: **That's it, now I can see the GCN example in PyG**. 
+> 在 PyG 的例子里，训练图和测试图是采样的，测试图对于训练图就是 unseen 但不是 new.
 
 new nodes is not unseen nodes, need new embedding on the fly.
 
@@ -428,7 +429,7 @@ AND
 - objective function
 
 ### Lecture 7.2 - A Single Layer of a GNN
-> @haongngoc1215
+> NOTE: @haongngoc1215
 > This lecture is the best one in the whole series.
 
 #### A Single GNN Layer
@@ -572,7 +573,7 @@ $$
 
 
 #### GraphSAGE: L2 Normalization
-这好像也是在一些极端情况中 GraphSAGE 比 GCN 更稳定的原因，比如: usdt转账网络中有中心化交易所这种超级节点
+> NOTE: 这好像也是在一些极端情况中 GraphSAGE 比 GCN 更稳定的原因，比如: usdt转账网络中有中心化交易所这种超级节点
 - **$\ell_2$ Normalization:**
   - **Optional:** Apply $\ell_2$ normalization to $\mathbf{h}_v^{(l)}$ at every layer
   - $$\mathbf{h}_v^{(l)} \leftarrow \frac{\mathbf{h}_v^{(l)}}{\|\mathbf{h}_v^{(l)}\|_2} \quad \forall v \in V \quad \text{where} \quad \|u\|_2 = \sqrt{\sum_i u_i^2} \, (\ell_2\text{-norm})$$
@@ -662,6 +663,7 @@ $$\mathbf{h}_A^{(l)} = \sigma (\alpha_{AB} \mathbf{W}^{(l)} \mathbf{h}_B^{(l-1)}
 
 
 #### Attention Mechanism (4)
+> NOTE: 
 > multi-head 的就像模型融合导致结果更稳健，每个 head
 > 局部最优，融合后更稳健。
 - 🔹 **Multi-head attention:** Stabilizes the learning process of attention mechanism
@@ -715,9 +717,8 @@ $$\mathbf{h}_A^{(l)} = \sigma (\alpha_{AB} \mathbf{W}^{(l)} \mathbf{h}_B^{(l-1)}
 | **GAT**                              | **83.3%** |
 
 - **improvement w.r.t GCN**: 1.8%
-
-> Attention mechanism can be used with many different graph neural network models
-
+> NOTE:
+> Attention mechanism can be used with many different graph neural network models.
 > In many cases, attention leads to performance gains
 
 - **t-SNE plot of GAT-based node embeddings**:
@@ -858,7 +859,7 @@ https://www.youtube.com/watch?v=ew1cnUjRgl4
   - **Output:** Node embeddings $h_v^{(L)}$ after $L$ GNN layers
 
 #### The Over-smoothing Problem
-> 这是为什么GNN的层数少，不像CNN那样多
+> NOTE: 这是为什么GNN的层数少，不像CNN那样多
 - **The Issue of stacking many GNN layers**
   - GNN suffers from **the over-smoothing problem**
 - **The over-smoothing problem**: all the node embeddings converge to the same value
@@ -992,6 +993,284 @@ $$ \begin{align*}
 \end{align*} $$
 
 ### Lecture 8.1 - Graph Augmentation for GNNs
+http://snap.stanford.edu/class/cs224w-2021/
+08-GNN-application.pdf (2021)
+- Graph feature augmentation
+- Graph structure augmentation
+
+It's unlikely that the input graph happens to be
+the optimal computation graph for embeddings
+
+> NOTE:
+> - constant: inductive 归纳的 (能扩展到 unseen)
+> - one-hot: transductive 直推的 (不能扩展到 unseen)
+
+- Feature augmentation on graphs
+  - constant vs. one-hot
+  - Why do we need feature augmentation?
+    - (1) Input graph does not have node features
+    - (2) Certain structures are hard to learn by GNN
+- structure augmentation
+
+
+#### Add Virtual Nodes / Edges
+
+- **Motivation:** Augment sparse graphs
+
+- **(1) Add virtual edges**
+  - **Common approach:** Connect 2-hop neighbors via virtual edges
+  - **Intuition:** Instead of using adj. matrix $A$ for GNN computation, use $A + A^2$
+
+- **Use cases:** Bipartite graphs
+  - Author-to-papers (they authored)
+  - 2-hop virtual edges make an author-author collaboration graph
+
+- **(2) Add virtual nodes**
+  - The virtual node will connect to all the nodes in the graph
+    - Suppose in a sparse graph, two nodes have shortest path distance of 10
+    - After adding the virtual node, **all the nodes will have a distance of two**
+      - Node A — Virtual node — Node B
+  - **Benefits:** Greatly **improves message passing in sparse graphs**
+
+**what if graph too large or too dense**
+
+Hamilton et al. Inductive Representation Learning on Large Graphs, NeurIPS 2017
+- node neighborhood sampling
+> NOTE: in practice, sampling is good that reduce computation and still work and scale to large networks.
+
+### Lecture 8.2 - Training Graph Neural Networks
+http://snap.stanford.edu/class/cs224w-2021/
+08-GNN-application.pdf (2021)
+#### Prediction with GNNs
+- GNN prediction head
+  - node-level
+  - edge-level
+    - (1) Concatenation + Linear
+    - (2) Dot product
+  - graph-level
+    - using all the node embeddings in our graph
+    - like AGG: mean, max, sum (good for small graph)
+    - Issue: Global pooling over a (large) graph will lose information
+    - solution:
+      1. hierarchical
+      2. diffpool
+#### Training Graph Neural Networks
+#### GNN training pipeline
+##### predictions and labels
+- supervised
+- unsupervised (self-supervised)
+- Supervised labels on graphs
+  > NOTE: this is useful for my own task init.
+- Unsupervised signals on graphs
+  > NOTE: Node statistics: such as clustering coefficient, PageRank; Graph statistics: if isomorphic
+
+##### loss function
+- settings: each datapoint is one node/edge/graph
+- Classification or Regression
+
+max margin loss: order matters, value not
+
+- evaluation metrics for GNN
+  - same as normal ML metrics
+  > NOTE: in information retrieve, text mining, people like use F1-score
+
+- ROC AUC
+  - ROC AUC: Area under the ROC Curve.
+  - Intuition: The probability that a classifier will rank a
+randomly chosen positive instance higher than a
+randomly chosen negative one
+
+- (5) How do we split our dataset into train / validation / test set?
+
+### Lecture 8.3 - Setting up GNN Prediction Tasks
+http://snap.stanford.edu/class/cs224w-2021/
+08-GNN-application.pdf (2021)
+> NOTE: this part is confused
+- dataset split
+- Splitting a graph dataset is different. data points are NOT independent
+  - solution 1 (Transductive setting): only split node labels
+  - solution 2 (Inductive setting): We break the edges between splits to get multiple graphs
+
+##### Transductive / Inductive Settings
+
+- **Transductive setting**: training / validation / test sets are **on the same graph**
+  - The **dataset consists of one graph**
+  - **The entire graph can be observed in all dataset splits**, we only split the labels
+  - Only applicable to **node / edge prediction tasks**
+
+- **Inductive setting**: training / validation / test sets are **on different graphs**
+  - The **dataset consists of multiple graphs**
+  - Each split can **only observe the graph(s) within the split**. A successful model should **generalize to unseen graphs**
+  - Applicable to **node / edge / graph** tasks
+
+Example:
+- node classification
+- graph classification
+- link prediction (tricky)
+  - default: Transductive link prediction split
+
+[GraphGym](https://github.com/snap-stanford/GraphGym) further implements the full pipeline to facilitate GNN design
+
+#### Summary of the Lecture
+
+- **We introduce** a general perspective for GNNs
+  - **GNN Layer:**
+    - Transformation + Aggregation
+    - Classic GNN layers: GCN, GraphSAGE, GAT
+  - **Layer connectivity:**
+    - The over-smoothing problem
+    - Solution: skip connections
+  - **Graph Augmentation:**
+    - Feature augmentation
+    - Structure augmentation
+  - **Learning Objectives**
+    - The full training pipeline of a GNN
+
+### Lecture 9.1 - How Expressive are Graph Neural Networks
+[09-theory.pdf](http://snap.stanford.edu/class/cs224w-2021/slides/09-theory.pdf)
+
+this part try to explain GNN from theory sight.
+in order to design most powerful GNN.
+
+- Key question: How well can a GNN distinguish different graph structures?
+- Key concept: Computational graph
+-  rooted subtree structures
+- Most expressive GNN should map subtrees to the node embeddings injectively
+  > NOTE: every subtree can map into embedding space (diff subtree, diff embedding)
+
+#### How Expressive is a GNN?
+
+- **Summary so far**
+  - To generate a node embedding, GNNs use a computational graph corresponding to a *subtree rooted around each node*.
+
+
+  - GNN can fully distinguish different subtree structures if *every step of its neighbor aggregation is injective.*
+
+  - Using injective neighbor aggregation $\rightarrow$ distinguish different subtrees
+  - **Input graph**
+  - **Computational graph = Rooted subtree**
+
+### Lecture 9.2 - Designing the Most Powerful GNNs
+[09-theory.pdf](http://snap.stanford.edu/class/cs224w-2021/slides/09-theory.pdf)
+
+- neighbor aggregation functions
+  - GCN: mean-pool
+  - GraphSAGE: max-pool
+
+- We analyzed the **expressive power of GNNs**.
+- **Main takeaways**:
+  - Expressive power of GNNs can be characterized by that of the neighbor aggregation function.
+  - Neighbor aggregation is a function over multi-sets (sets with repeating elements)
+  - GCN and GraphSAGE's aggregation functions fail to distinguish some basic multi-sets; hence **not injective**.
+  - Therefore, GCN and GraphSAGE are **not** maximally powerful GNNs.
+
+- model any injective multiset function. In practice, MLP hidden dimensionality of 100 to 500 is sufficient.
+- Graph Isomorphism Network (GIN): GIN is THE most expressive GNN in the class of message-passing GNNs!
+  > NOTE: in GIN, sum agg is better than avg and max
+- GIN is a “neural network” version of the WL graph kernel (Weisfeiler-Lehman graph kernel)
+- Recall: Color refinement algorithm in WL kernel.
+- The complete GIN model
+
+#### GIN and WL Graph Kernel
+
+- **GIN can be understood as differentiable neural version of the WL graph Kernel:**
+
+|                     | Update target                       | Update function |
+|---------------------|-------------------------------------|-----------------|
+| **WL Graph Kernel** | Node colors (one-hot)               | HASH            |
+| **GIN**             | Node embeddings (low-dim vectors)   | GINConv         |
+
+- **Advantages of GIN over the WL graph kernel are:**
+  - Node embeddings are **low-dimensional**; hence, they can capture the fine-grained similarity of different nodes.
+  - Parameters of the update function can be **learned for the downstream tasks**.
+
+Here's a markdown version of the provided text:
+
+#### Summary of the Lecture
+
+* We design a neural network that can model an injective multi-set function.
+* We use the neural network for neighbor aggregation function and arrive at GIN---the most expressive GNN model.
+* The key is to use element-wise sum pooling, instead of mean-/max-pooling.
+* GIN is closely related to the WL graph kernel.
+* Both GIN and WL graph kernel can distinguish most of the real graphs!
+
+- GNNs and connection to bijective functions on sets.
+- Most powerful GNN is equivalent to WL graph isomorphism test.
+- GIN is the most powerful GNN.
+  - Sum aggregator is more powerful than mean is more powerful than max.
+
+
+### Lecture 10.1-Heterogeneous & Knowledge Graph Embedding
+[10-kg.pdf](http://snap.stanford.edu/class/cs224w-2021/slides/10-kg.pdf)
+- Heterogeneous: multi node or edge types
+- Heterogeneous Graphs
+  - Relational GCNs
+  - Knowledge Graphs
+  - Embeddings for KG Completion
+
+We start with a directed graph with one relation, Only pass messages along direction of edges.
+
+Relational GCN (RGCN)
+- Use different neural network weights for different relation types.
+
+
+
+**Relational GCN: Definition**
+
+- **Relational GCN (RGCN):**
+
+  $$
+  h_v^{(l+1)} = \sigma \left( \sum_{r \in R} \sum_{u \in N_v^r} \frac{1}{c_{v,r}} W_r^{(l)} h_u^{(l)} + W_0^{(l)} h_v^{(l)} \right)
+  $$
+
+- **How to write this as Message + Aggregation?**
+
+- **Message:**
+  - Each neighbor of a given relation:
+
+    $$
+    m_{u,r}^{(l)} = \frac{1}{c_{v,r}} W_r^{(l)} h_u^{(l)}
+    $$
+
+  - Self-loop:
+
+    $$
+    m_v^{(l)} = W_0^{(l)} h_v^{(l)}
+    $$
+
+- **Aggregation:**
+  - Sum over messages from neighbors and self-loop, then apply activation:
+
+    $$
+    h_v^{(l+1)} = \sigma \left( \text{Sum} \left( \{ m_{u,r}^{(l)}, u \in N(v) \} \cup \{ m_v^{(l)} \} \right) \right)
+    $$
+
+  - **Normalized by node degree of the relation** $c_{v,r} = |N_v^r|$
+
+
+
+- Rapid # parameters growth w.r.t # relations!
+  > NOTE: 尤其是 KG graph 的时候
+- Two methods to regularize the weights 𝐖𝒓
+  - (1) Use block diagonal matrices
+  - (2) Basis/Dictionary learning
+
+Example:
+- predict node label
+- predict link
+  > NOTE: dataset 和 relation 都要划分，结合之前的 link dataset 划分看
+
+> NOTE: Calculate metrics
+> 1. Hits@𝒌: 𝟏 [𝑹𝑲 ≤ 𝒌] . Higher is better
+> 2. Reciprocal Rank: 𝟏/𝑹𝑲. Higher is better
+
+#### Summary of RGCN
+- Relational GCN, a graph neural network for heterogeneous graphs
+- Can perform entity classification as well as link prediction tasks.
+- Ideas can easily be extended into RGNN (RGraphSAGE, RGAT, etc.)
+
+### Lecture 10.2 - Knowledge Graph Completion
+[10-kg.pdf](http://snap.stanford.edu/class/cs224w-2021/slides/10-kg.pdf)
 
 
 ## reference
