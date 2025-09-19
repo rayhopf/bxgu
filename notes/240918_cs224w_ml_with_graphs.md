@@ -1272,6 +1272,15 @@ Example:
 ### Lecture 10.2 - Knowledge Graph Completion
 [10-kg.pdf](http://snap.stanford.edu/class/cs224w-2021/slides/10-kg.pdf)
 
+KG examples
+
+
+### Lecture 10.3 - Knowledge Graph Completion Algorithms
+[10-kg.pdf](http://snap.stanford.edu/class/cs224w-2021/slides/10-kg.pdf)
+
+
+
+
 
 ## reference
 - [video](https://www.youtube.com/playlist?list=PLoROMvodv4rPLKxIpqhjhPgdQy7imNkDn)
